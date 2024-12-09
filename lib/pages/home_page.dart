@@ -46,9 +46,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // year selector
             DropdownButton(
-              value: '2022',
+              value: '2024',
               items: const [
-                DropdownMenuItem(value: '2022', child: Text('2022'))
+                DropdownMenuItem(value: '2024', child: Text('2024'))
               ],
               onChanged: (value) {},
             ),

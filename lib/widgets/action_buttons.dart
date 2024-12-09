@@ -85,7 +85,7 @@ class _ActionButtonsState extends State<ActionButtons> {
               width: 50.0,
               height: 50.0,
               decoration: BoxDecoration(
-                color: isFront ? Colors.black87 : Colors.cyan,
+                color: isFront ? Colors.black87 : Color(0xFF033495),
                 shape: BoxShape.circle,
               ),
               child: Icon(

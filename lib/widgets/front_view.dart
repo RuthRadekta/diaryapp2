@@ -15,7 +15,14 @@ class FrontView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20.0),
         decoration: BoxDecoration(
-          color: Colors.cyan,
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFFEE5E1), // Warna gradien pertama
+              Color(0xFF033495), // Warna gradien kedua
+            ],
+            begin: Alignment.topLeft, // Titik awal gradien
+            end: Alignment.bottomRight, // Titik akhir gradien
+          ),
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: const [
             BoxShadow(color: Colors.black26, blurRadius: 8.0),
