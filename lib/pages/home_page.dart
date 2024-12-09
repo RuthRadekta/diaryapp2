@@ -18,6 +18,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   late AnimationController controller;
 
+  //Tambahkan state untuk tahun yang dipilih
+  String selectedYear = '2024';
+
+
   switchView() {
     setState(() {
       if (isFrontView) {
@@ -45,15 +49,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             const SearchAndMenu(),
             const SizedBox(height: 30.0),
 
+
             // year selector
-            DropdownButton(
-              value: '2024',
-              items: const [
-                DropdownMenuItem(value: '2024', child: Text('2024'))
-              ],
-              onChanged: (value) {},
+             DropdownButton<String>(
+              value: selectedYear,
+              dropdownColor: Colors.white, // Atur warna dropdown
+              items: List.generate(10, (index) {
+                int year = 2024 + index;
+                return DropdownMenuItem(
+                  value: year.toString(),
+                  child: Text(year.toString()),
+                );
+              }),
+              onChanged: (value) {
+                setState(() {
+                  selectedYear = value!;
+                });
+              },
             ),
-            const SizedBox(height: 30.0),
 
             // month cards
             Expanded(
