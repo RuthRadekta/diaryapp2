@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380723375740",
+    "project_id": "diaryapp-cae2c",
+    "storage_bucket": "diaryapp-cae2c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380723375740:android:33bef5f1ef414edd53a3f9",
+        "android_client_info": {
+          "package_name": "com.example.diaryapp2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlqOsftqawym5q2IqLBuQTMeHR1A0ElyQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

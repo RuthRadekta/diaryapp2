@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:diaryapp2/firestore_test_page.dart';
 import 'package:flutter/material.dart';
 import 'package:diaryapp2/widgets/search_and_menu.dart';
 import 'package:diaryapp2/widgets/front_view.dart';
@@ -100,6 +101,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const FirestoreTestPage()),
+        );
+      },
+      child: const Icon(Icons.add),
+    ),
     );
   }
 }
