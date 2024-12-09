@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class ActionButtons extends StatefulWidget {
   final Function change;
@@ -10,6 +11,42 @@ class ActionButtons extends StatefulWidget {
 
 class _ActionButtonsState extends State<ActionButtons> {
   bool isFront = true;
+
+  // Fungsi untuk mendapatkan tanggal hari ini
+  String getCurrentDate() {
+    DateTime now = DateTime.now();
+    return DateFormat('MMM dd/yyyy').format(now);
+  }
+
+  // Fungsi untuk menentukan ikon sesuai dengan waktu
+  IconData getCurrentTimeIcon() {
+    int hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 12) {
+      return Icons.wb_sunny_rounded; // Pagi
+    } else if (hour >= 12 && hour < 16) {
+      return Icons.wb_sunny; // Siang
+    } else if (hour >= 16 && hour < 19) {
+      return Icons.wb_twilight; // Sore
+    } else {
+      return Icons.nightlight_round; // Malam
+    }
+  }
+
+  // Fungsi untuk mendapatkan teks deskripsi waktu
+  String getCurrentTimeDescription() {
+    int hour = DateTime.now().hour;
+
+    if (hour >= 5 && hour < 12) {
+      return 'Morning';
+    } else if (hour >= 12 && hour < 16) {
+      return 'Afternoon';
+    } else if (hour >= 16 && hour < 19) {
+      return 'Evening';
+    } else {
+      return 'Night';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,26 +66,26 @@ class _ActionButtonsState extends State<ActionButtons> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // sun icon
-                const Icon(Icons.wb_sunny_rounded),
+                // Icon sesuai dengan waktu saat ini
+                Icon(getCurrentTimeIcon()),
                 const SizedBox(width: 10.0),
 
-                // today details (date, month)
+                // Today details (date, time description)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Text(
-                        'Today',
-                        style: TextStyle(
+                        getCurrentTimeDescription(), // Deskripsi waktu (Pagi, Siang, Sore, Malam)
+                        style: const TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        'OCT 11/2022',
-                        style: TextStyle(
+                        getCurrentDate(), // Tanggal dinamis
+                        style: const TextStyle(
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -85,7 +122,7 @@ class _ActionButtonsState extends State<ActionButtons> {
               width: 50.0,
               height: 50.0,
               decoration: BoxDecoration(
-                color: isFront ? Colors.black87 : Color(0xFF033495),
+                color: isFront ? Colors.black87 : const Color(0xFF033495),
                 shape: BoxShape.circle,
               ),
               child: Icon(
