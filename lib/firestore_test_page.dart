@@ -106,11 +106,11 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
               decoration: const InputDecoration(labelText: 'Isi Diary'),
             ),
             ElevatedButton(
-              onPressed: () => addData(_isiDiaryController.text), // ✅ Pemanggilan fungsi benar
+              onPressed: () => addData(_isiDiaryController.text), 
               child: const Text('Tambah Data'),
             ),
             ElevatedButton(
-              onPressed: readData, // ✅ Pemanggilan fungsi benar
+              onPressed: readData,
               child: const Text('Baca Data'),
             ),
             const Divider(),
@@ -123,7 +123,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
               decoration: const InputDecoration(labelText: 'Isi Diary Baru'),
             ),
             ElevatedButton(
-              onPressed: () => updateData(_updateIdController.text, _isiDiaryController.text), // ✅ Pemanggilan fungsi benar
+              onPressed: () => updateData(_updateIdController.text, _isiDiaryController.text), 
               child: const Text('Perbarui Data'),
             ),
             const Divider(),
@@ -132,7 +132,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
               decoration: const InputDecoration(labelText: 'ID yang akan dihapus'),
             ),
             ElevatedButton(
-              onPressed: () => deleteData(_deleteIdController.text), // ✅ Pemanggilan fungsi benar
+              onPressed: () => deleteData(_deleteIdController.text),
               child: const Text('Hapus Data'),
             ),
           ],
