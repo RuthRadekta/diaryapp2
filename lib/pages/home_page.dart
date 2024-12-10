@@ -18,6 +18,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool isFrontView = true;
   late AnimationController controller;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String selectedYear = '2024';
 
   // Map untuk menyimpan catatan berdasarkan tanggal
   Map<String, String> notes = {};
@@ -118,13 +119,23 @@ void navigateToFirestoreTestPage() {
           children: [
             const SearchAndMenu(),
             const SizedBox(height: 30.0),
-            DropdownButton(
-              value: '2024',
-              items: const [
-                DropdownMenuItem(value: '2024', child: Text('2024'))
-              ],
-              onChanged: (value) {},
-            ),
+            // year selector
+             DropdownButton<String>(
+              value: selectedYear,
+              dropdownColor: Colors.white, // Atur warna dropdown
+              items: List.generate(10, (index) {
+                int year = 2024 + index;
+                return DropdownMenuItem(
+                  value: year.toString(),
+                  child: Text(year.toString()),
+                );
+              }),
+              onChanged: (value) {
+                setState(() {
+                  selectedYear = value!;
+                });
+              },
+             ),
             const SizedBox(height: 30.0),
             Expanded(
               child: Container(
