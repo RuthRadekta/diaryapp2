@@ -91,49 +91,237 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     }
   }
 
+  Stream<QuerySnapshot> getNotesStream() {
+    return note.orderBy('tanggal', descending: true).snapshots();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF004AAD),
       appBar: AppBar(
-        title: const Text('Tes Firestore CRUD'),
+        backgroundColor: const Color(0xFF004AAD),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Interactive Diary',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (String value) {
+              if (value == 'Tambah Data') {
+                addData(_isiDiaryController.text);
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'Tambah Data',
+                  child: Text('Tambah Data'),
+                ),
+              ];
+            },
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: getNotesStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Belum ada diary.',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    );
+                  }
+                  final data = snapshot.data!.docs;
+                  return ListView.builder(
+                    itemCount: data.length,
+                    itemBuilder: (context, index) {
+                      final doc = data[index];
+                      final id = doc['id'];
+                      final isi = doc['isi'];
+                      final tanggal = (doc['tanggal'] as Timestamp).toDate();
+                      return Card(
+                        color: Colors.white,
+                        child: ListTile(
+                          title: Text(
+                            isi, // Menampilkan isi diary
+                            overflow: TextOverflow.ellipsis, // Memotong teks jika terlalu panjang
+                            maxLines: 1, // Menampilkan hanya 1 baris
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                              '${tanggal.toLocal()}'.split(' ')[0]), // Format tanggal
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              deleteData(id);
+                            },
+                          ),
+                          onTap: () {
+                            // Navigasi ke halaman detail ketika Card diklik
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailPage(
+                                  id: id,
+                                  isi: isi,
+                                  tanggal: tanggal,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            const Divider(color: Colors.white),
             TextField(
               controller: _isiDiaryController,
-              decoration: const InputDecoration(labelText: 'Isi Diary'),
+              maxLines: null,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: 'Write something here...',
+                hintStyle: TextStyle(color: Colors.white70),
+                border: InputBorder.none,
+              ),
             ),
-            ElevatedButton(
-              onPressed: () => addData(_isiDiaryController.text), 
-              child: const Text('Tambah Data'),
+            const SizedBox(height: 10),
+            FloatingActionButton.extended(
+              onPressed: () {
+                addData(_isiDiaryController.text);
+              },
+              backgroundColor: const Color(0xFFFFD4E2),
+              label: Row(
+                children: const [
+                  Text(
+                    "Add Diary",
+                    style: TextStyle(color: Colors.black),
+                  ),
+                  Icon(Icons.add, color: Colors.black),
+                ],
+              ),
             ),
-            ElevatedButton(
-              onPressed: readData,
-              child: const Text('Baca Data'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DetailPage extends StatefulWidget {
+  final String id;
+  final String isi;
+  final DateTime tanggal;
+
+  const DetailPage({
+    super.key,
+    required this.id,
+    required this.isi,
+    required this.tanggal,
+  });
+
+  @override
+  State<DetailPage> createState() => _DetailPageState();
+}
+
+class _DetailPageState extends State<DetailPage> {
+  late TextEditingController _isiController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi controller dengan isi diary yang sudah ada
+    _isiController = TextEditingController(text: widget.isi);
+  }
+
+  @override
+  void dispose() {
+    _isiController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _updateDiary(String id, String isiBaru) async {
+    try {
+      await note.doc(id).update({
+        'isi': isiBaru,
+        'tanggal': DateTime.now(), // Update tanggal ke waktu sekarang
+      });
+      debugPrint('Diary berhasil diperbarui.');
+    } catch (e) {
+      debugPrint('Gagal memperbarui diary: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF004AAD),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF004AAD),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Edit Diary',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () async {
+            // Simpan data ke Firestore saat tombol Kembali ditekan
+            await _updateDiary(widget.id, _isiController.text);
+            Navigator.pop(context);
+          },
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Tanggal:',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
-            const Divider(),
-            TextField(
-              controller: _updateIdController,
-              decoration: const InputDecoration(labelText: 'ID yang akan diupdate'),
+            const SizedBox(height: 5),
+            Text(
+              '${widget.tanggal.toLocal()}'.split(' ')[0],
+              style: const TextStyle(color: Colors.white, fontSize: 14),
             ),
-            TextField(
-              controller: _isiDiaryController,
-              decoration: const InputDecoration(labelText: 'Isi Diary Baru'),
-            ),
-            ElevatedButton(
-              onPressed: () => updateData(_updateIdController.text, _isiDiaryController.text), 
-              child: const Text('Perbarui Data'),
-            ),
-            const Divider(),
-            TextField(
-              controller: _deleteIdController,
-              decoration: const InputDecoration(labelText: 'ID yang akan dihapus'),
-            ),
-            ElevatedButton(
-              onPressed: () => deleteData(_deleteIdController.text),
-              child: const Text('Hapus Data'),
+            const SizedBox(height: 20),
+            Expanded(
+              child: TextField(
+                controller: _isiController,
+                maxLines: null, // Input teks fleksibel
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: const InputDecoration(
+                  hintText: 'Tulis sesuatu di sini...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.white),
+                  ),
+                  contentPadding: EdgeInsets.all(16),
+                ),
+              ),
             ),
           ],
         ),
