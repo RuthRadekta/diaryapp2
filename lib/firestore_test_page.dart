@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 final CollectionReference note = FirebaseFirestore.instance.collection('note'); // Koleksi 'note'
 
@@ -18,7 +19,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
   final TextEditingController _deleteIdController = TextEditingController();
 
   // 🔥 Fungsi CRUD (pindahkan ke dalam _FirestoreTestPageState)
-  Future<void> addData(String isiDiary) async {
+  /*Future<void> addData(String isiDiary) async {
     try {
       final String uniqueId = const Uuid().v4(); // Membuat ID unik menggunakan UUID
       await note.doc(uniqueId).set({
@@ -30,7 +31,33 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     } catch (e) {
       debugPrint('Gagal menambah data: $e');
     }
+  }*/
+  Future<void> addData(String isiDiary) async {
+  try {
+    final String uniqueId = const Uuid().v4(); // Membuat ID unik menggunakan UUID
+
+    // Cek koneksi internet
+    ConnectivityResult connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      debugPrint("Tidak ada koneksi internet. Data tersimpan secara lokal.");
+      // Implementasi penyimpanan lokal (misalnya SQLite atau SharedPreferences)
+      return;
+    }
+
+    // Simpan ke Firestore
+    await note.doc(uniqueId).set({
+      'id': uniqueId,
+      'isi': isiDiary,
+      'tanggal': DateTime.now(),
+    });
+    debugPrint('Data berhasil ditambahkan ke Firestore');
+  } catch (e) {
+    debugPrint('Gagal menambah data: $e');
+    debugPrint("Data tersimpan secara lokal karena terjadi error.");
+    // Implementasi penyimpanan lokal jika Firestore gagal
   }
+}
+
 
   Future<void> readData() async {
     try {

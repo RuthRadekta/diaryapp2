@@ -2,8 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class ActionButtons extends StatefulWidget {
+  final Function showEditPopup;
   final Function change;
-  const ActionButtons({super.key, required this.change});
+  final Function navigateToFirestoreTestPage;
+
+  const ActionButtons({
+    super.key,
+    required this.showEditPopup,
+    required this.change,
+    required this.navigateToFirestoreTestPage,
+  });
 
   @override
   State<ActionButtons> createState() => _ActionButtonsState();
@@ -54,7 +62,6 @@ class _ActionButtonsState extends State<ActionButtons> {
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
       child: Row(
         children: [
-          // today chip
           Container(
             width: 155.0,
             height: 50.0,
@@ -69,15 +76,14 @@ class _ActionButtonsState extends State<ActionButtons> {
                 // Icon sesuai dengan waktu saat ini
                 Icon(getCurrentTimeIcon()),
                 const SizedBox(width: 10.0),
-
-                // Today details (date, time description)
+                // Today details (deskripsi waktu dan tanggal)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        getCurrentTimeDescription(), // Deskripsi waktu (Pagi, Siang, Sore, Malam)
+                        getCurrentTimeDescription(), // Deskripsi waktu
                         style: const TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.w500,
@@ -96,24 +102,29 @@ class _ActionButtonsState extends State<ActionButtons> {
             ),
           ),
           const Spacer(),
-          // edit button
-          Container(
-            width: 50.0,
-            height: 50.0,
-            decoration: const BoxDecoration(
-              color: Colors.black87,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.mode_edit_outlined,
-              color: Colors.white,
+          // Tombol edit
+          GestureDetector(
+            onTap: () {
+              widget.navigateToFirestoreTestPage(); // Fungsi navigasi
+            },
+            child: Container(
+              width: 50.0,
+              height: 50.0,
+              decoration: const BoxDecoration(
+                color: Colors.black87,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.mode_edit_outlined,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(width: 10.0),
-          // calender switch button
+          // Tombol toggle
           GestureDetector(
             onTap: () {
-              widget.change();
+              widget.change(); // Fungsi change
               setState(() {
                 isFront = !isFront;
               });

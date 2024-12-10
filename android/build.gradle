@@ -1,9 +1,21 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0' // Pastikan sesuai dengan Flutter Anda
+        classpath 'com.google.gms:google-services:4.3.15' // Jika Anda menggunakan Firebase
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
 }
+
 
 rootProject.buildDir = "../build"
 subprojects {

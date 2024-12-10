@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'action_buttons.dart';
 
-class BackView extends StatelessWidget {
+class BackView extends StatefulWidget {
   final int monthIndex;
+  final Function showEditPopup;
+  final Map<String, String> notes; // Menambahkan notes ke BackView
+
   const BackView({
     Key? key,
     required this.monthIndex,
+    required this.showEditPopup,
+    required this.notes,
   }) : super(key: key);
+
+  @override
+  _BackViewState createState() => _BackViewState();
+}
+
+class _BackViewState extends State<BackView> {
+  int? selectedDay;
 
   @override
   Widget build(BuildContext context) {
@@ -24,22 +37,22 @@ class BackView extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              '$monthIndex',
+              '${widget.monthIndex}',
               textScaleFactor: 2.5,
             ),
             const SizedBox(height: 5.0),
             Text(
-              months[monthIndex]!.keys.toList()[0],
+              months[widget.monthIndex]!.keys.toList()[0],
               textScaleFactor: 2.0,
               style: const TextStyle(
                 color: Colors.grey,
               ),
             ),
             const SizedBox(height: 20.0),
-            // dates
+            // Grid untuk tanggal bulan
             Expanded(
               child: GridView.builder(
-                itemCount: months[monthIndex]!.values.toList()[0],
+                itemCount: months[widget.monthIndex]!.values.toList()[0],
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
                   childAspectRatio: 1 / 1,
@@ -50,18 +63,41 @@ class BackView extends StatelessWidget {
                   int day = i + 1;
                   String cDay = day < 10 ? '0$day' : '$day';
                   String cMonth =
-                      monthIndex < 10 ? '0$monthIndex' : '$monthIndex';
+                      widget.monthIndex < 10 ? '0${widget.monthIndex}' : '${widget.monthIndex}';
                   DateTime date = DateTime.parse('2022-$cMonth-$cDay');
 
-                  return Text(
-                    '$day',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: date.weekday == DateTime.sunday
-                          ? Colors.red
-                          : date.weekday == DateTime.saturday
-                              ? Colors.blue
-                              : Colors.black,
+                  bool isSelected = selectedDay == day;
+                  bool hasNote = widget.notes.containsKey('$cDay-$cMonth');
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedDay = day;
+                        String dateStr = '$cDay-$cMonth'; // Format tanggal
+                        widget.showEditPopup(dateStr); // Panggil popup untuk tanggal tertentu
+                      });
+                    },
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected ? Colors.blue : Colors.transparent,
+                        border: hasNote
+                            ? Border.all(color: Colors.green, width: 2)
+                            : Border.all(color: Colors.transparent),
+                      ),
+                      child: Text(
+                        '$day',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: date.weekday == DateTime.sunday
+                              ? Colors.red
+                              : date.weekday == DateTime.saturday
+                                  ? Colors.blue
+                                  : Colors.black,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
                     ),
                   );
                 },
