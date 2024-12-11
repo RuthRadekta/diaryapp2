@@ -1,17 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:diaryapp2/pages/home_page.dart';
+import 'package:uuid/uuid.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants.dart';
 import 'action_buttons.dart';
+
+final CollectionReference note = FirebaseFirestore.instance.collection('note'); // Koleksi 'note'
 
 class BackView extends StatefulWidget {
   final int monthIndex;
   final Function showEditPopup;
-  final Map<String, String> notes; // Menambahkan notes ke BackView
+  final Map<String, String> notes;
+  final Function saveNoteToFirestore; // Terima fungsi ini sebagai parameter
 
   const BackView({
     Key? key,
     required this.monthIndex,
     required this.showEditPopup,
     required this.notes,
+    required this.saveNoteToFirestore, // Terima fungsi ini
   }) : super(key: key);
 
   @override
@@ -20,6 +28,50 @@ class BackView extends StatefulWidget {
 
 class _BackViewState extends State<BackView> {
   int? selectedDay;
+  
+  void _showDiaryDialog(int day, int month) {
+  final TextEditingController _judulController = TextEditingController();
+
+  // Format tanggal sesuai
+  String cDay = day < 10 ? '0$day' : '$day';
+  String cMonth = month < 10 ? '0$month' : '$month';
+  String dateStr = '$cDay-$cMonth'; // Format tanggal yang sesuai
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Masukkan Judul Diary'),
+        content: TextField(
+          controller: _judulController,
+          decoration: const InputDecoration(hintText: 'Masukkan judul...'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Menutup dialog tanpa simpan
+            },
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (_judulController.text.isNotEmpty) {
+                widget.showEditPopup(dateStr, _judulController.text); // Menyimpan judul menggunakan callback
+                widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
+                Navigator.pop(context); // Tutup dialog
+                debugPrint('Tersimpan');
+              } else {
+                debugPrint('Judul tidak boleh kosong!');
+              }
+            },
+            child: const Text('Simpan'),
+          )
+        ],
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +126,8 @@ class _BackViewState extends State<BackView> {
                       setState(() {
                         selectedDay = day;
                         String dateStr = '$cDay-$cMonth'; // Format tanggal
-                        widget.showEditPopup(dateStr); // Panggil popup untuk tanggal tertentu
+                        //widget.showEditPopup(dateStr); // Panggil popup untuk tanggal tertentu
+                        _showDiaryDialog(day, widget.monthIndex); // Panggil dialog dengan day dan month
                       });
                     },
                     child: Container(

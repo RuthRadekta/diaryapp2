@@ -6,6 +6,8 @@ import 'package:diaryapp2/widgets/back_view.dart';
 import 'package:diaryapp2/widgets/action_buttons.dart';
 import 'package:diaryapp2/firestore_test_page.dart'; // Import your FirestoreTestPage
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,11 +39,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Simpan catatan ke Firestore
   Future<void> saveNoteToFirestore(String date, String note) async {
+  final connectivityResult = await Connectivity().checkConnectivity();
+
+  if (connectivityResult == ConnectivityResult.none) {
+    debugPrint('Tidak ada koneksi internet. Catatan tidak dapat disimpan.');
+    return;
+  }
+
+  try {
     await _firestore.collection('notes').doc(date).set({'note': note});
     setState(() {
       notes[date] = note;
     });
+    debugPrint('Catatan berhasil disimpan: $note');
+  } catch (e) {
+    debugPrint('Error saat menyimpan data ke Firestore: $e');
   }
+}
 
   // Baca semua catatan dari Firestore
   Future<void> loadNotesFromFirestore() async {
@@ -62,8 +76,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   // Fungsi untuk menampilkan popup edit dan menyimpan catatan
-  void showEditPopup(String dateStr) {
+  void showEditPopup(String dateStr, String judul) {
   final TextEditingController noteController = TextEditingController();
+  noteController.text = judul; // Pre-fill dengan judul jika ada
 
   showDialog(
     context: context,
@@ -86,8 +101,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
           TextButton(
             onPressed: () {
-              saveNoteToFirestore(dateStr, noteController.text); // Simpan ke Firestore
-              Navigator.of(context).pop(); // Tutup popup
+              if (noteController.text.isNotEmpty) {
+                saveNoteToFirestore(dateStr, noteController.text); // Simpan catatan
+                Navigator.of(context).pop(); // Tutup popup
+              } else {
+                debugPrint('Judul tidak boleh kosong!');
+              }
             },
             child: const Text("Simpan"),
           ),
@@ -170,6 +189,7 @@ void navigateToFirestoreTestPage() {
                                   monthIndex: i + 1,
                                   showEditPopup: showEditPopup, // Pass the function here
                                   notes: notes,
+                                  saveNoteToFirestore: saveNoteToFirestore, // Pass the function here
                                 ),
                               ),
                       );

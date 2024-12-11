@@ -37,7 +37,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     await note.doc(uniqueId).set({
       'id': uniqueId,
       'judul': judul, // Tambahkan judul
-      'isi': '',
+      'isi': isiDiary,
       'tanggal': DateTime.now(),
     });
     debugPrint('Data berhasil ditambahkan ke Firestore');
@@ -99,73 +99,74 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         ),
         actions: [
           PopupMenuButton<String>(
-  onSelected: (String value) {
-    if (value == 'Tambah Data') {
-      showDialog(
-        context: context,
-        builder: (context) {
-          final TextEditingController _judulDialogController =
-              TextEditingController();
-          final TextEditingController _isiDialogController =
-              TextEditingController();
-          return AlertDialog(
-            title: const Text('Tambah Diary'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _judulDialogController,
-                  decoration: const InputDecoration(
-                    hintText: 'Masukkan judul...',
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _isiDialogController,
-                  decoration: const InputDecoration(
-                    hintText: 'Masukkan isi...',
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Batal'),
-              ),
-              TextButton(
-                onPressed: () {
-                  if (_judulDialogController.text.isNotEmpty &&
-                      _isiDialogController.text.isNotEmpty) {
-                    addData(
-                      _judulDialogController.text,
-                      _isiDialogController.text,
+            onSelected: (String value) {
+              if (value == 'Tambah Data') {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    final TextEditingController _judulDialogController =
+                        TextEditingController();
+                    final TextEditingController _isiDialogController =
+                        TextEditingController();
+                    return AlertDialog(
+                      title: const Text('Tambah Diary'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextField(
+                            controller: _judulDialogController,
+                            decoration: const InputDecoration(
+                              hintText: 'Masukkan judul...',
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _isiDialogController,
+                            decoration: const InputDecoration(
+                              hintText: 'Masukkan isi...',
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            if (_judulDialogController.text.isNotEmpty &&
+                                _isiDialogController.text.isNotEmpty) {
+                              addData(
+                                _judulDialogController.text,
+                                _isiDialogController.text,
+                              );
+                              Navigator.pop(context);
+                            } else {
+                              debugPrint('Judul dan isi tidak boleh kosong!');
+                            }
+                          },
+                          child: const Text('Simpan'),
+                        ),
+                      ],
                     );
-                    Navigator.pop(context);
-                  } else {
-                    debugPrint('Judul dan isi tidak boleh kosong!');
-                  }
-                },
-                child: const Text('Simpan'),
-              ),
-            ],
-          );
-        },
-      );
-    }
-  },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem(
-                value: 'Tambah Data',
-                child: Text('Tambah Data'),
-              ),
-            ];
-          },
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-        ),
+                  },
+                );
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'Tambah Data',
+                  child: Text('Tambah Data'),
+                ),
+              ];
+            },
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+          ),
+
         ],
       ),
       body: Padding(
@@ -217,7 +218,6 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              // Menampilkan dialog konfirmasi sebelum menghapus data
                               showDialog(
                                 context: context,
                                 builder: (BuildContext context) {
@@ -268,17 +268,6 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
             const Divider(color: Colors.white),
             TextField(
               controller: _judulController,
-              maxLines: 1,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Write title here...', // Menambahkan hint untuk judul
-                hintStyle: TextStyle(color: Colors.white70),
-                border: InputBorder.none,
-              ),
-            ),
-            /*const SizedBox(height: 10),
-            TextField(
-              controller: _isiDiaryController,
               maxLines: null,
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
@@ -286,16 +275,16 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                 hintStyle: TextStyle(color: Colors.white70),
                 border: InputBorder.none,
               ),
-            ),*/
+            ),
             const SizedBox(height: 10),
             FloatingActionButton.extended(
               onPressed: () {
                 if (_judulController.text.isNotEmpty) {
-                  // Menambahkan hanya judul
-                  addData(_judulController.text, '');
-                  _judulController.clear(); // Kosongkan field judul setelah disimpan
+                  addData(_judulController.text, _isiDiaryController.text);
+                  _judulController.clear();
+                  _isiDiaryController.clear();
                 } else {
-                  debugPrint('Judul tidak boleh kosong!');
+                  debugPrint('Judul atau isi tidak boleh kosong!');
                 }
               },
               backgroundColor: const Color(0xFFFFD4E2),
@@ -315,8 +304,6 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     );
   }
 }
-
-//-----------------------------------------------//
 
 class DetailPage extends StatefulWidget {
   final String id;
@@ -396,14 +383,16 @@ class _DetailPageState extends State<DetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 5),
-            // Menampilkan judul diary dalam format tebal (bold)
-            Text(
-              widget.judul,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: Colors.white,
+            const SizedBox(height: 1),
+            TextField(
+              controller: _judulController,
+              maxLines: 1,
+              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              decoration: const InputDecoration(
+                labelStyle: TextStyle(color: Colors.white70),
+                hintText: 'Judul diary...',
+                border: InputBorder.none,
+                focusedBorder: InputBorder.none
               ),
             ),
             const SizedBox(height: 5),
