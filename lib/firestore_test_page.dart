@@ -15,24 +15,12 @@ class FirestoreTestPage extends StatefulWidget {
 class _FirestoreTestPageState extends State<FirestoreTestPage> {
   // Controller untuk input data
   final TextEditingController _isiDiaryController = TextEditingController();
+  final TextEditingController _judulController = TextEditingController();
   final TextEditingController _updateIdController = TextEditingController();
   final TextEditingController _deleteIdController = TextEditingController();
 
   // 🔥 Fungsi CRUD (pindahkan ke dalam _FirestoreTestPageState)
-  /*Future<void> addData(String isiDiary) async {
-    try {
-      final String uniqueId = const Uuid().v4(); // Membuat ID unik menggunakan UUID
-      await note.doc(uniqueId).set({
-        'id': uniqueId, // ID yang dihasilkan dari UUID
-        'isi': isiDiary, // Data diary dari input user
-        'tanggal': DateTime.now() // Tanggal saat ini
-      });
-      debugPrint('Data berhasil ditambahkan');
-    } catch (e) {
-      debugPrint('Gagal menambah data: $e');
-    }
-  }*/
-  Future<void> addData(String isiDiary) async {
+  Future<void> addData(String judul, String isiDiary) async {
   try {
     final String uniqueId = const Uuid().v4(); // Membuat ID unik menggunakan UUID
 
@@ -47,7 +35,8 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     // Simpan ke Firestore
     await note.doc(uniqueId).set({
       'id': uniqueId,
-      'isi': isiDiary,
+      'judul': judul, // Tambahkan judul
+      'isi': '',
       'tanggal': DateTime.now(),
     });
     debugPrint('Data berhasil ditambahkan ke Firestore');
@@ -109,21 +98,74 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         ),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (String value) {
-              if (value == 'Tambah Data') {
-                addData(_isiDiaryController.text);
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'Tambah Data',
-                  child: Text('Tambah Data'),
+  onSelected: (String value) {
+    if (value == 'Tambah Data') {
+      showDialog(
+        context: context,
+        builder: (context) {
+          final TextEditingController _judulDialogController =
+              TextEditingController();
+          final TextEditingController _isiDialogController =
+              TextEditingController();
+          return AlertDialog(
+            title: const Text('Tambah Diary'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _judulDialogController,
+                  decoration: const InputDecoration(
+                    hintText: 'Masukkan judul...',
+                  ),
                 ),
-              ];
-            },
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-          ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _isiDialogController,
+                  decoration: const InputDecoration(
+                    hintText: 'Masukkan isi...',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Batal'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (_judulDialogController.text.isNotEmpty &&
+                      _isiDialogController.text.isNotEmpty) {
+                    addData(
+                      _judulDialogController.text,
+                      _isiDialogController.text,
+                    );
+                    Navigator.pop(context);
+                  } else {
+                    debugPrint('Judul dan isi tidak boleh kosong!');
+                  }
+                },
+                child: const Text('Simpan'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  },
+  itemBuilder: (BuildContext context) {
+    return [
+      const PopupMenuItem(
+        value: 'Tambah Data',
+        child: Text('Tambah Data'),
+      ),
+    ];
+  },
+  icon: const Icon(Icons.more_vert, color: Colors.white),
+),
+
         ],
       ),
       body: Padding(
@@ -152,12 +194,17 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                       final doc = data[index];
                       final id = doc['id'];
                       final isi = doc['isi'];
+                      
+                      // Memastikan data tidak null dan kemudian melakukan pengecekan 'judul'
+                      final docData = doc.data() as Map<String, dynamic>?;
+                      final judul = docData != null && docData.containsKey('judul') ? docData['judul'] : 'No Title'; // Pengecekan field 'judul'
+
                       final tanggal = (doc['tanggal'] as Timestamp).toDate();
                       return Card(
                         color: Colors.white,
                         child: ListTile(
                           title: Text(
-                            isi, // Menampilkan isi diary
+                            judul, // Menampilkan hanya judul
                             overflow: TextOverflow.ellipsis, // Memotong teks jika terlalu panjang
                             maxLines: 1, // Menampilkan hanya 1 baris
                             style: const TextStyle(
@@ -180,6 +227,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                               MaterialPageRoute(
                                 builder: (context) => DetailPage(
                                   id: id,
+                                  judul: judul, // Kirim judul ke halaman detail
                                   isi: isi,
                                   tanggal: tanggal,
                                 ),
@@ -195,6 +243,17 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
             ),
             const Divider(color: Colors.white),
             TextField(
+              controller: _judulController,
+              maxLines: 1,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: 'Write title here...', // Menambahkan hint untuk judul
+                hintStyle: TextStyle(color: Colors.white70),
+                border: InputBorder.none,
+              ),
+            ),
+            /*const SizedBox(height: 10),
+            TextField(
               controller: _isiDiaryController,
               maxLines: null,
               style: const TextStyle(color: Colors.white),
@@ -203,11 +262,17 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                 hintStyle: TextStyle(color: Colors.white70),
                 border: InputBorder.none,
               ),
-            ),
+            ),*/
             const SizedBox(height: 10),
             FloatingActionButton.extended(
               onPressed: () {
-                addData(_isiDiaryController.text);
+                if (_judulController.text.isNotEmpty) {
+                  // Menambahkan hanya judul
+                  addData(_judulController.text, '');
+                  _judulController.clear(); // Kosongkan field judul setelah disimpan
+                } else {
+                  debugPrint('Judul tidak boleh kosong!');
+                }
               },
               backgroundColor: const Color(0xFFFFD4E2),
               label: Row(
@@ -229,12 +294,14 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
 
 class DetailPage extends StatefulWidget {
   final String id;
+  final String judul;
   final String isi;
   final DateTime tanggal;
 
   const DetailPage({
     super.key,
     required this.id,
+    required this.judul,
     required this.isi,
     required this.tanggal,
   });
@@ -244,32 +311,36 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
+  late TextEditingController _judulController;
   late TextEditingController _isiController;
 
   @override
   void initState() {
     super.initState();
     // Inisialisasi controller dengan isi diary yang sudah ada
+     _judulController = TextEditingController(text: widget.judul);
     _isiController = TextEditingController(text: widget.isi);
   }
 
   @override
   void dispose() {
+    _judulController.dispose();
     _isiController.dispose();
     super.dispose();
   }
 
-  Future<void> _updateDiary(String id, String isiBaru) async {
-    try {
-      await note.doc(id).update({
-        'isi': isiBaru,
-        'tanggal': DateTime.now(), // Update tanggal ke waktu sekarang
-      });
-      debugPrint('Diary berhasil diperbarui.');
-    } catch (e) {
-      debugPrint('Gagal memperbarui diary: $e');
-    }
+  Future<void> _updateDiary(String id, String judulBaru, String isiBaru) async {
+  try {
+    await note.doc(id).update({
+      'judul': judulBaru, // Update judul
+      'isi': isiBaru,
+      'tanggal': DateTime.now(), // Update tanggal ke waktu sekarang
+    });
+    debugPrint('Diary berhasil diperbarui.');
+  } catch (e) {
+    debugPrint('Gagal memperbarui diary: $e');
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -284,13 +355,12 @@ class _DetailPageState extends State<DetailPage> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () async {
-            // Simpan data ke Firestore saat tombol Kembali ditekan
-            await _updateDiary(widget.id, _isiController.text);
-            Navigator.pop(context);
-          },
-        ),
+  icon: const Icon(Icons.arrow_back, color: Colors.white),
+  onPressed: () async {
+    await _updateDiary(widget.id, _judulController.text, _isiController.text);
+    Navigator.pop(context);
+  },
+),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -305,6 +375,21 @@ class _DetailPageState extends State<DetailPage> {
             Text(
               '${widget.tanggal.toLocal()}'.split(' ')[0],
               style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _judulController,
+              maxLines: 1,
+              style: const TextStyle(color: Colors.white, fontSize: 16),
+              decoration: const InputDecoration(
+                labelText: 'Judul',
+                labelStyle: TextStyle(color: Colors.white70),
+                hintText: 'Judul diary...',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
