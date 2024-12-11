@@ -26,11 +26,11 @@ class BackView extends StatefulWidget {
   _BackViewState createState() => _BackViewState();
 }
 
+final TextEditingController _judulController = TextEditingController();
 class _BackViewState extends State<BackView> {
   int? selectedDay;
   
   void _showDiaryDialog(int day, int month) {
-  final TextEditingController _judulController = TextEditingController();
 
   // Format tanggal sesuai
   String cDay = day < 10 ? '0$day' : '$day';
@@ -54,16 +54,22 @@ class _BackViewState extends State<BackView> {
             child: const Text('Batal'),
           ),
           TextButton(
-            onPressed: () {
-              if (_judulController.text.isNotEmpty) {
-                widget.showEditPopup(dateStr, _judulController.text); // Menyimpan judul menggunakan callback
-                widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
-                Navigator.pop(context); // Tutup dialog
-                debugPrint('Tersimpan');
-              } else {
-                debugPrint('Judul tidak boleh kosong!');
-              }
-            },
+              onPressed: () {
+                if (_judulController.text.isNotEmpty) {
+                  widget.showEditPopup(dateStr, _judulController.text); // Menyimpan judul menggunakan callback
+
+                  // Simpan catatan ke Firestore dengan UUID sebagai ID
+                  var uuid = Uuid();
+                  String noteId = uuid.v4(); // ID unik untuk catatan
+                  widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
+
+                  setState(() {}); // Refresh tampilan setelah menyimpan
+                  Navigator.pop(context); // Tutup dialog
+                  debugPrint('Tersimpan');
+                } else {
+                  debugPrint('Judul tidak boleh kosong!');
+                }
+              },
             child: const Text('Simpan'),
           )
         ],
@@ -125,7 +131,8 @@ class _BackViewState extends State<BackView> {
                     onTap: () {
                       setState(() {
                         selectedDay = day;
-                        String dateStr = '$cDay-$cMonth'; // Format tanggal
+                        //String dateStr = '$cDay-$cMonth'; // Format tanggal
+                        //widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
                         //widget.showEditPopup(dateStr); // Panggil popup untuk tanggal tertentu
                         _showDiaryDialog(day, widget.monthIndex); // Panggil dialog dengan day dan month
                       });

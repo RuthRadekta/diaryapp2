@@ -39,34 +39,55 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   // Simpan catatan ke Firestore
   Future<void> saveNoteToFirestore(String date, String note) async {
-  final connectivityResult = await Connectivity().checkConnectivity();
+    final connectivityResult = await Connectivity().checkConnectivity();
 
-  if (connectivityResult == ConnectivityResult.none) {
-    debugPrint('Tidak ada koneksi internet. Catatan tidak dapat disimpan.');
-    return;
-  }
+    if (connectivityResult == ConnectivityResult.none) {
+      debugPrint('Tidak ada koneksi internet. Catatan tidak dapat disimpan.');
+      return;
+    }
 
-  try {
-    await _firestore.collection('notes').doc(date).set({'note': note});
-    setState(() {
-      notes[date] = note;
-    });
-    debugPrint('Catatan berhasil disimpan: $note');
-  } catch (e) {
-    debugPrint('Error saat menyimpan data ke Firestore: $e');
+    try {
+      // Gunakan UUID untuk membuat ID unik untuk setiap catatan
+      var uuid = Uuid();
+      String noteId = uuid.v4(); // ID unik untuk catatan
+
+      // Simpan catatan menggunakan UUID sebagai ID
+      await _firestore.collection('note').doc(noteId).set({
+        'id': noteId, // ID unik catatan
+        'judul': note.isNotEmpty ? note : 'No Title', // Judul catatan
+        'isi': 'Diary isi default', // Isi diary (dapat diubah jika ada input untuk ini)
+        'tanggal': Timestamp.now(), // Tanggal saat ini
+        'date': date.isNotEmpty ? date : '', // Format date untuk identifikasi tambahan
+      });
+      
+      setState(() {
+        notes[date] = note;
+      });
+      debugPrint('Catatan berhasil disimpan: $note');
+    } catch (e) {
+      debugPrint('Error saat menyimpan data ke Firestore: $e');
+    }
   }
-}
 
   // Baca semua catatan dari Firestore
   Future<void> loadNotesFromFirestore() async {
-    final querySnapshot = await _firestore.collection('notes').get();
+    final querySnapshot = await _firestore.collection('note').get();
     setState(() {
       for (var doc in querySnapshot.docs) {
-        notes[doc.id] = doc.data()['note'];
+        var date = doc.data()['date'];
+        var note = doc.data()['note'];
+        if (note != null) {
+        // Cek apakah date atau note adalah null
+        if (date != null && note != null) {
+          notes[date] = note as String; // Pastikan 'note' adalah String
+        } else {
+          debugPrint('Data tidak lengkap: $date atau $note');
+          }
+        }
       }
     });
   }
-
+  
   @override
   void initState() {
     super.initState();

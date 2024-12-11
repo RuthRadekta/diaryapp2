@@ -193,14 +193,14 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final doc = data[index];
-                      final id = doc['id'];
-                      final isi = doc['isi'];
+                      final id = doc['id'] ?? '';
+                      final isi = doc['isi'] ?? 'No Content';
                       
                       // Memastikan data tidak null dan kemudian melakukan pengecekan 'judul'
-                      final docData = doc.data() as Map<String, dynamic>?;
+                      final docData = doc.data() as Map<String, dynamic>? ?? {};
                       final judul = docData != null && docData.containsKey('judul') ? docData['judul'] : 'No Title'; // Pengecekan field 'judul'
 
-                      final tanggal = (doc['tanggal'] as Timestamp).toDate();
+                      final tanggal = (doc['tanggal'] as Timestamp).toDate() ?? DateTime.now();
                       return Card(
                         color: Colors.white,
                         child: ListTile(
@@ -214,7 +214,8 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                             ),
                           ),
                           subtitle: Text(
-                              '${tanggal.toLocal()}'.split(' ')[0]), // Format tanggal
+                              '${tanggal.toLocal()}'.split(' ')[0]
+                          ), // Format tanggal
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
