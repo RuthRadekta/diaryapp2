@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:intl/intl.dart';
 
 final CollectionReference note = FirebaseFirestore.instance.collection('note'); // Koleksi 'note'
 
@@ -155,17 +156,16 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
       );
     }
   },
-  itemBuilder: (BuildContext context) {
-    return [
-      const PopupMenuItem(
-        value: 'Tambah Data',
-        child: Text('Tambah Data'),
-      ),
-    ];
-  },
-  icon: const Icon(Icons.more_vert, color: Colors.white),
-),
-
+          itemBuilder: (BuildContext context) {
+            return [
+              const PopupMenuItem(
+                value: 'Tambah Data',
+                child: Text('Tambah Data'),
+              ),
+            ];
+          },
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+        ),
         ],
       ),
       body: Padding(
@@ -217,7 +217,31 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
-                              deleteData(id);
+                              // Menampilkan dialog konfirmasi sebelum menghapus data
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Text('Hapus Diary'),
+                                    content: const Text('Apakah Anda yakin ingin menghapus diary ini?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context); // Menutup dialog jika "No"
+                                        },
+                                        child: const Text('No'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          deleteData(id); // Hapus data jika "Yes"
+                                          Navigator.pop(context); // Menutup dialog
+                                        },
+                                        child: const Text('Yes'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
                             },
                           ),
                           onTap: () {
@@ -292,6 +316,8 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
   }
 }
 
+//-----------------------------------------------//
+
 class DetailPage extends StatefulWidget {
   final String id;
   final String judul;
@@ -344,6 +370,9 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Format tanggal untuk menampilkan dalam format yang diinginkan
+    final formattedDate = DateFormat('EEE, d MMM yyyy').format(widget.tanggal);
+
     return Scaffold(
       backgroundColor: const Color(0xFF004AAD),
       appBar: AppBar(
@@ -355,40 +384,36 @@ class _DetailPageState extends State<DetailPage> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-  icon: const Icon(Icons.arrow_back, color: Colors.white),
-  onPressed: () async {
-    await _updateDiary(widget.id, _judulController.text, _isiController.text);
-    Navigator.pop(context);
-  },
-),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () async {
+            await _updateDiary(widget.id, _judulController.text, _isiController.text);
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Tanggal:',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+            const SizedBox(height: 5),
+            // Menampilkan judul diary dalam format tebal (bold)
+            Text(
+              widget.judul,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 5),
+            // Menampilkan tanggal dalam format italic
             Text(
-              '${widget.tanggal.toLocal()}'.split(' ')[0],
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _judulController,
-              maxLines: 1,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-              decoration: const InputDecoration(
-                labelText: 'Judul',
-                labelStyle: TextStyle(color: Colors.white70),
-                hintText: 'Judul diary...',
-                border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
+              formattedDate,
+              style: const TextStyle(
+                fontStyle: FontStyle.italic,
+                fontSize: 16,
+                color: Colors.white70,
               ),
             ),
             const SizedBox(height: 20),
@@ -400,10 +425,8 @@ class _DetailPageState extends State<DetailPage> {
                 decoration: const InputDecoration(
                   hintText: 'Tulis sesuatu di sini...',
                   hintStyle: TextStyle(color: Colors.white70),
-                  border: OutlineInputBorder(),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white),
-                  ),
+                  border: InputBorder.none,
+                  focusedBorder: InputBorder.none,
                   contentPadding: EdgeInsets.all(16),
                 ),
               ),
