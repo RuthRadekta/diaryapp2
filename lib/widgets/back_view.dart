@@ -7,20 +7,18 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../constants.dart';
 import 'action_buttons.dart';
 
-final CollectionReference note = FirebaseFirestore.instance.collection('note'); // Koleksi 'note'
+final CollectionReference note = FirebaseFirestore.instance.collection('note');
 
 class BackView extends StatefulWidget {
-  final int monthIndex;
   final Function showEditPopup;
   final Map<String, String> notes;
-  final Function saveNoteToFirestore; // Terima fungsi ini sebagai parameter
+  final Function saveNoteToFirestore;
 
   const BackView({
     Key? key,
-    required this.monthIndex,
     required this.showEditPopup,
     required this.notes,
-    required this.saveNoteToFirestore, // Terima fungsi ini
+    required this.saveNoteToFirestore,
   }) : super(key: key);
 
   @override
@@ -28,71 +26,96 @@ class BackView extends StatefulWidget {
 }
 
 final TextEditingController _judulController = TextEditingController();
+
 class _BackViewState extends State<BackView> {
-  int? selectedDay;
-  
+  DateTime _currentDate = DateTime.now(); // Tanggal saat ini
+  int _selectedDay = 0;
+  late int _currentMonth;
+  late int _currentYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMonth = _currentDate.month; // Bulan saat ini
+    _currentYear = _currentDate.year; // Tahun saat ini
+    _selectedDay = _currentDate.day; // Hari saat ini
+  }
+
   void _showDiaryDialog(int day, int month) {
+    String cDay = day < 10 ? '0$day' : '$day';
+    String cMonth = month < 10 ? '0$month' : '$month';
+    String dateStr = '$cDay-$cMonth';
 
-  // Format tanggal sesuai
-  String cDay = day < 10 ? '0$day' : '$day';
-  String cMonth = month < 10 ? '0$month' : '$month';
-  String dateStr = '$cDay-$cMonth'; // Format tanggal yang sesuai
-
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Masukkan Judul Diary'),
-        content: TextField(
-          controller: _judulController,
-          decoration: const InputDecoration(hintText: 'Masukkan judul...'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // Menutup dialog tanpa simpan
-            },
-            child: const Text('Batal'),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Masukkan Judul Diary'),
+          content: TextField(
+            controller: _judulController,
+            decoration: const InputDecoration(hintText: 'Masukkan judul...'),
           ),
-          TextButton(
-            onPressed: () async {
-              if (_judulController.text.isNotEmpty) {
-                var uuid = Uuid();
-                String noteId = uuid.v4(); // Buat ID unik untuk catatan baru
-
-                // Simpan diary ke Firestore
-                await widget.saveNoteToFirestore(dateStr, _judulController.text);
-
-                // Navigasi ke halaman DetailPage setelah diary disimpan
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetailPage(
-                      id: noteId,
-                      judul: _judulController.text,
-                      isi: '', // Karena ini diary baru, isi-nya kosong
-                      tanggal: DateTime.now(),
-                    ),
-                  ),
-                );
-
-                // Tutup dialog setelah navigasi
+          actions: [
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
-              } else {
-                debugPrint('Judul tidak boleh kosong!');
-              }
-            },
-            child: const Text('Simpan'),
-          )
-        ],
-      );
-    },
-  );
-}
+              },
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (_judulController.text.isNotEmpty) {
+                  var uuid = Uuid();
+                  String noteId = uuid.v4();
 
+                  await widget.saveNoteToFirestore(dateStr, _judulController.text);
+                  setState(() {
+                    _judulController.clear();
+                  });
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DetailPage(
+                        id: noteId,
+                        judul: _judulController.text,
+                        isi: '',
+                        tanggal: DateTime.now(),
+                      ),
+                    ),
+                  );
+                } else {
+                  debugPrint('Judul tidak boleh kosong!');
+                }
+              },
+              child: const Text('Simpan'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  int _daysInMonth(int month, int year) {
+    return DateTime(year, month + 1, 0).day;
+  }
+
+  void _changeMonth(int direction) {
+    setState(() {
+      _currentMonth += direction;
+      if (_currentMonth > 12) {
+        _currentMonth = 1;
+        _currentYear++;
+      } else if (_currentMonth < 1) {
+        _currentMonth = 12;
+        _currentYear--;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    int daysInCurrentMonth = _daysInMonth(_currentMonth, _currentYear);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Container(
@@ -106,23 +129,28 @@ class _BackViewState extends State<BackView> {
         ),
         child: Column(
           children: [
-            Text(
-              '${widget.monthIndex}',
-              textScaleFactor: 2.5,
-            ),
-            const SizedBox(height: 5.0),
-            Text(
-              months[widget.monthIndex]!.keys.toList()[0],
-              textScaleFactor: 2.0,
-              style: const TextStyle(
-                color: Colors.grey,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () => _changeMonth(-1),
+                ),
+                Text(
+                  '${_currentMonth}-${_currentYear}',
+                  textScaleFactor: 2.0,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                IconButton(
+                  icon: Icon(Icons.arrow_forward),
+                  onPressed: () => _changeMonth(1),
+                ),
+              ],
             ),
             const SizedBox(height: 20.0),
-            // Grid untuk tanggal bulan
             Expanded(
               child: GridView.builder(
-                itemCount: months[widget.monthIndex]!.values.toList()[0],
+                itemCount: daysInCurrentMonth,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
                   childAspectRatio: 1 / 1,
@@ -131,42 +159,36 @@ class _BackViewState extends State<BackView> {
                 ),
                 itemBuilder: (_, i) {
                   int day = i + 1;
-                  String cDay = day < 10 ? '0$day' : '$day';
-                  String cMonth =
-                      widget.monthIndex < 10 ? '0${widget.monthIndex}' : '${widget.monthIndex}';
-                  DateTime date = DateTime.parse('2022-$cMonth-$cDay');
-
-                  bool isSelected = selectedDay == day;
-                  bool hasNote = widget.notes.containsKey('$cDay-$cMonth');
+                  bool isToday = _currentDate.day == day &&
+                      _currentMonth == _currentDate.month &&
+                      _currentYear == _currentDate.year;
+                  bool isSelected = _selectedDay == day;
+                  bool hasNote = widget.notes.containsKey('$day-$_currentMonth');
 
                   return GestureDetector(
                     onTap: () {
                       setState(() {
-                        selectedDay = day;
-                        //String dateStr = '$cDay-$cMonth'; // Format tanggal
-                        //widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
-                        //widget.showEditPopup(dateStr); // Panggil popup untuk tanggal tertentu
-                        _showDiaryDialog(day, widget.monthIndex); // Panggil dialog dengan day dan month
+                        _selectedDay = day;
+                        _showDiaryDialog(day, _currentMonth);
                       });
                     },
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected ? Colors.blue : Colors.transparent,
+                        color: isSelected
+                            ? Colors.blue
+                            : isToday
+                                ? Colors.orange
+                                : Colors.transparent,
                         border: hasNote
                             ? Border.all(color: Colors.green, width: 2)
                             : Border.all(color: Colors.transparent),
                       ),
                       child: Text(
                         '$day',
-                        textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: date.weekday == DateTime.sunday
-                              ? Colors.red
-                              : date.weekday == DateTime.saturday
-                                  ? Colors.blue
-                                  : Colors.black,
+                          color: Colors.black,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -178,10 +200,7 @@ class _BackViewState extends State<BackView> {
             const Text(
               'Select a date to write',
               textScaleFactor: 0.8,
-              style: TextStyle(
-                color: Colors.grey,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
             ),
           ],
         ),

@@ -195,7 +195,7 @@ void navigateToFirestoreTestPage() {
                     viewportFraction: 0.78,
                   ),
                   scrollDirection: Axis.horizontal,
-                  itemCount: 12,
+                  itemCount: 1,
                   itemBuilder: (_, i) => AnimatedBuilder(
                     animation: controller,
                     builder: (_, child) {
@@ -213,15 +213,14 @@ void navigateToFirestoreTestPage() {
                         child: isFrontView
                             ? FrontView(monthIndex: i + 1)
                             : Transform(
-                                transform: Matrix4.rotationY(pi),
-                                alignment: Alignment.center,
-                                child: BackView(
-                                  monthIndex: i + 1,
-                                  showEditPopup: showEditPopup,
-                                  notes: notes,
-                                  saveNoteToFirestore: saveNoteToFirestore,
-                                ),
+                              transform: Matrix4.rotationY(pi),
+                              alignment: Alignment.center,
+                              child: BackView(
+                                showEditPopup: showEditPopup,
+                                notes: notes,
+                                saveNoteToFirestore: saveNoteToFirestore,
                               ),
+                        ),
                       );
                     },
                   ),
