@@ -1,3 +1,4 @@
+import 'package:diaryapp2/pages/detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:diaryapp2/pages/home_page.dart';
@@ -54,22 +55,33 @@ class _BackViewState extends State<BackView> {
             child: const Text('Batal'),
           ),
           TextButton(
-              onPressed: () {
-                if (_judulController.text.isNotEmpty) {
-                  widget.showEditPopup(dateStr, _judulController.text); // Menyimpan judul menggunakan callback
+            onPressed: () async {
+              if (_judulController.text.isNotEmpty) {
+                var uuid = Uuid();
+                String noteId = uuid.v4(); // Buat ID unik untuk catatan baru
 
-                  // Simpan catatan ke Firestore dengan UUID sebagai ID
-                  var uuid = Uuid();
-                  String noteId = uuid.v4(); // ID unik untuk catatan
-                  widget.saveNoteToFirestore(dateStr, _judulController.text); // Simpan catatan ke Firestore
+                // Simpan diary ke Firestore
+                await widget.saveNoteToFirestore(dateStr, _judulController.text);
 
-                  setState(() {}); // Refresh tampilan setelah menyimpan
-                  Navigator.pop(context); // Tutup dialog
-                  debugPrint('Tersimpan');
-                } else {
-                  debugPrint('Judul tidak boleh kosong!');
-                }
-              },
+                // Navigasi ke halaman DetailPage setelah diary disimpan
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetailPage(
+                      id: noteId,
+                      judul: _judulController.text,
+                      isi: '', // Karena ini diary baru, isi-nya kosong
+                      tanggal: DateTime.now(),
+                    ),
+                  ),
+                );
+
+                // Tutup dialog setelah navigasi
+                Navigator.pop(context);
+              } else {
+                debugPrint('Judul tidak boleh kosong!');
+              }
+            },
             child: const Text('Simpan'),
           )
         ],
