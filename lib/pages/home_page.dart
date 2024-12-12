@@ -1,6 +1,6 @@
 import 'dart:math';
+import 'package:diaryapp2/widgets/menu_icon.dart';
 import 'package:flutter/material.dart';
-import 'package:diaryapp2/widgets/search_and_menu.dart';
 import 'package:diaryapp2/widgets/front_view.dart';
 import 'package:diaryapp2/widgets/back_view.dart';
 import 'package:diaryapp2/widgets/action_buttons.dart';
@@ -157,12 +157,21 @@ void navigateToFirestoreTestPage() {
       body: SafeArea(
         child: Column(
           children: [
-            const SearchAndMenu(),
+            // Ganti SearchAndMenu dengan SearchIcon dan MenuIcon
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  MenuIcon(),   // Menambahkan widget MenuIcon
+                ],
+              ),
+            ),
             const SizedBox(height: 30.0),
-            // year selector
-             DropdownButton<String>(
+            // Dropdown untuk memilih tahun
+            DropdownButton<String>(
               value: selectedYear,
-              dropdownColor: Colors.white, // Atur warna dropdown
+              dropdownColor: Colors.white,
               items: List.generate(10, (index) {
                 int year = 2024 + index;
                 return DropdownMenuItem(
@@ -175,7 +184,7 @@ void navigateToFirestoreTestPage() {
                   selectedYear = value!;
                 });
               },
-             ),
+            ),
             const SizedBox(height: 30.0),
             Expanded(
               child: Container(
@@ -208,9 +217,9 @@ void navigateToFirestoreTestPage() {
                                 alignment: Alignment.center,
                                 child: BackView(
                                   monthIndex: i + 1,
-                                  showEditPopup: showEditPopup, // Pass the function here
+                                  showEditPopup: showEditPopup,
                                   notes: notes,
-                                  saveNoteToFirestore: saveNoteToFirestore, // Pass the function here
+                                  saveNoteToFirestore: saveNoteToFirestore,
                                 ),
                               ),
                       );
@@ -220,11 +229,11 @@ void navigateToFirestoreTestPage() {
               ),
             ),
             const SizedBox(height: 30.0),
-            // Pass the navigate function to ActionButtons
+            // ActionButtons untuk interaksi lebih lanjut
             ActionButtons(
               showEditPopup: showEditPopup,
               change: switchView,
-              navigateToFirestoreTestPage: navigateToFirestoreTestPage, // Pass the function here
+              navigateToFirestoreTestPage: navigateToFirestoreTestPage,
             ),
             const SizedBox(height: 75.0),
           ],
