@@ -64,7 +64,7 @@ class _DetailPageState extends State<DetailPage> {
         centerTitle: true,
         title: const Text(
           'Edit Diary',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),

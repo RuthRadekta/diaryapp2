@@ -157,8 +157,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  MenuIcon(),
+                children: [
+                  MenuIcon(
+                    navigateToFirestoreTestPage: navigateToFirestoreTestPage,  // Memberikan parameter yang dibutuhkan
+                  ),
                 ],
               ),
             ),

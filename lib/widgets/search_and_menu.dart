@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
-class SearchAndMenu extends StatelessWidget {
+class SearchAndMenu extends StatefulWidget {
+  final Function navigateToFirestoreTestPage;
+
   const SearchAndMenu({
     Key? key,
+    required this.navigateToFirestoreTestPage,
   }) : super(key: key);
 
+  @override
+  _SearchAndMenuState createState() => _SearchAndMenuState();
+}
+
+class _SearchAndMenuState extends State<SearchAndMenu> {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -18,7 +26,9 @@ class SearchAndMenu extends StatelessWidget {
             iconSize: 30.0,
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              widget.navigateToFirestoreTestPage(); // Mengakses melalui "widget."
+            },
             icon: const Icon(Icons.short_text_rounded),
             iconSize: 30.0,
           ),

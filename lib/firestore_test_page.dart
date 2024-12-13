@@ -95,7 +95,7 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         centerTitle: true,
         title: const Text(
           'Interactive Diary',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -363,18 +363,21 @@ Future<void> _createDiary(String judulBaru, String isiBaru) async {
         centerTitle: true,
         title: const Text(
           'Edit Diary',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () async {
             if (widget.id.isEmpty) {
               // Jika ID kosong, berarti ini adalah diary baru
+              print('Memanggil _createDiary');
               await _createDiary(_judulController.text, _isiController.text);
             } else {
               // Jika ID tidak kosong, berarti ini adalah diary yang diperbarui
+              print('Memanggil _updateDiary');
               await _updateDiary(widget.id, _judulController.text, _isiController.text);
             }
+            debugPrint("Kembali ke halaman sebelumnya");
             Navigator.pop(context); // Kembali ke layar sebelumnya
           },
         ),

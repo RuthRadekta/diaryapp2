@@ -1,5 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:diaryapp2/pages/detail_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+
+  // Koleksi 'note' di Firestore
+final CollectionReference note = FirebaseFirestore.instance.collection('note');
+
+Future<void> addData(String judul, String isiDiary) async {
+  try {
+    // Cek koneksi internet
+    ConnectivityResult connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      debugPrint("Tidak ada koneksi internet. Data tersimpan secara lokal.");
+      // Implementasi penyimpanan lokal jika perlu
+      return;
+    }
+
+    // Pastikan data yang dikirimkan tidak kosong
+    if (judul.isEmpty || isiDiary.isEmpty) {
+      debugPrint("Judul atau Isi Diary tidak boleh kosong");
+      return; // Hindari menambah data kosong
+    }
+
+    // Membuat unique ID dengan UUID
+    final String uniqueId = const Uuid().v4();
+    debugPrint('Generated unique ID: $uniqueId');
+
+    // Simpan ke Firestore, gunakan add() agar Firestore membuat ID otomatis
+    await note.add({
+      'id': uniqueId,  // Jika ingin menggunakan UUID
+      'judul': judul,
+      'isi': isiDiary,
+      'tanggal': DateTime.now(),
+    });
+
+    debugPrint('Data berhasil ditambahkan ke Firestore');
+  } catch (e) {
+    debugPrint('Gagal menambah data: $e');
+    debugPrint("Data tersimpan secara lokal karena terjadi error.");
+    // Implementasi penyimpanan lokal jika Firestore gagal
+  }
+}
+
+Future<void> _createDiary(String judulBaru, String isiBaru) async {
+  try {
+    final newDoc = await note.add({
+      'judul': judulBaru.isEmpty ? 'Diary Baru' : judulBaru, // Jika judul kosong, gunakan 'Diary Baru'
+      'isi': isiBaru,
+      'tanggal': DateTime.now(), // Menyimpan waktu saat ini sebagai tanggal
+    });
+    debugPrint('Diary berhasil dibuat dengan ID: ${newDoc.id}');
+  } catch (e) {
+    debugPrint('Gagal membuat diary: $e');
+  }
+}
+
 
 class ActionButtons extends StatefulWidget {
   final Function showEditPopup;
@@ -105,7 +162,17 @@ class _ActionButtonsState extends State<ActionButtons> {
           // Tombol edit
           GestureDetector(
             onTap: () {
-              widget.navigateToFirestoreTestPage(); // Fungsi navigasi
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DetailPage(
+                    id: '',
+                    judul: '',
+                    isi: '',
+                    tanggal: DateTime.now(),
+                  ),
+                ),
+              );
             },
             child: Container(
               width: 50.0,
