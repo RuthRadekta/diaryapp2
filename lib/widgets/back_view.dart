@@ -232,9 +232,19 @@ class _BackViewState extends State<BackView> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: () => _changeMonth(1),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed: () => _changeMonth(1),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search),
+                      onPressed: () {
+                        // Tambahkan fungsi search di sini
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

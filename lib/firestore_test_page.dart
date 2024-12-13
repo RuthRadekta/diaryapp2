@@ -20,6 +20,17 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
   final TextEditingController _updateIdController = TextEditingController();
   final TextEditingController _deleteIdController = TextEditingController();
 
+  // Tambahkan controller dan variabel untuk pencarian
+  final TextEditingController _searchController = TextEditingController();
+  bool isSearching = false;
+  String searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   // 🔥 Fungsi CRUD (pindahkan ke dalam _FirestoreTestPageState)
   Future<void> addData(String judul, String isiDiary) async {
   try {
@@ -81,8 +92,18 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
     }
   }
 
+  // Fungsi untuk mendapatkan stream data dengan filter pencarian
   Stream<QuerySnapshot> getNotesStream() {
-    return note.orderBy('tanggal', descending: true).snapshots();
+    if (searchQuery.isEmpty) {
+      return note.orderBy('tanggal', descending: true).snapshots();
+    } else {
+      // Gunakan where untuk memfilter berdasarkan judul
+      return note
+          .orderBy('judul')
+          .startAt([searchQuery])
+          .endAt([searchQuery + '\uf8ff'])
+          .snapshots();
+    }
   }
 
   @override
@@ -93,175 +114,131 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         backgroundColor: const Color(0xFF004AAD),
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          'Interactive Diary',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (String value) {
-              if (value == 'Tambah Data') {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    final TextEditingController _judulDialogController =
-                        TextEditingController();
-                    final TextEditingController _isiDialogController =
-                        TextEditingController();
-                    return AlertDialog(
-                      title: const Text('Tambah Diary'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TextField(
-                            controller: _judulDialogController,
-                            decoration: const InputDecoration(
-                              hintText: 'Masukkan judul...',
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          TextField(
-                            controller: _isiDialogController,
-                            decoration: const InputDecoration(
-                              hintText: 'Masukkan isi...',
-                            ),
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Batal'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            if (_judulDialogController.text.isNotEmpty &&
-                                _isiDialogController.text.isNotEmpty) {
-                              addData(
-                                _judulDialogController.text,
-                                _isiDialogController.text,
-                              );
-                              Navigator.pop(context);
-                            } else {
-                              debugPrint('Judul dan isi tidak boleh kosong!');
-                            }
-                          },
-                          child: const Text('Simpan'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'Tambah Data',
-                  child: Text('Tambah Data'),
+        title: !isSearching
+            ? const Text(
+                'Interactive Diary',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-              ];
-            },
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-          ),
-
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: getNotesStream(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                      child: Text(
-                        'Belum ada diary.',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }
-                  final data = snapshot.data!.docs;
-                  return ListView.builder(
-                    itemCount: data.length,
-                    itemBuilder: (context, index) {
-                      final doc = data[index];
-                      final id = doc.id;
-                      final docData = doc.data() as Map<String, dynamic>;
-                      final isi = docData['isi'] ?? 'No Content';
-                      final judul = docData['judul'] ?? 'No Title';
-                      final tanggal = (docData['tanggal'] as Timestamp?)?.toDate() ?? DateTime.now();
-                      return Card(
-                        color: Colors.white,
-                        child: ListTile(
-                          title: Text(
-                            judul,
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          subtitle: Text('${tanggal.toLocal()}'.split(' ')[0]),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    title: const Text('Hapus Diary'),
-                                    content: const Text('Apakah Anda yakin ingin menghapus diary ini?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text('No'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          deleteData(id);
-                                          Navigator.pop(context);
-                                        },
-                                        child: const Text('Yes'),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DetailPage(
-                                  id: id,
-                                  judul: judul,
-                                  isi: isi,
-                                  tanggal: tanggal,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  );
+              )
+            : TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  hintText: 'Cari judul diary...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
                 },
               ),
-            ),
-          ],
-        ),
+        actions: [
+          IconButton(
+            icon: Icon(isSearching ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                if (isSearching) {
+                  isSearching = false;
+                  searchQuery = '';
+                  _searchController.clear();
+                } else {
+                  isSearching = true;
+                }
+              });
+            },
+          ),
+        ],
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: getNotesStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'Belum ada diary.',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
+
+          final data = snapshot.data!.docs;
+          return ListView.builder(
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              final doc = data[index];
+              final id = doc.id;
+              final docData = doc.data() as Map<String, dynamic>;
+              final isi = docData['isi'] ?? 'No Content';
+              final judul = docData['judul'] ?? 'No Title';
+              final tanggal = (docData['tanggal'] as Timestamp?)?.toDate() ?? DateTime.now();
+              return Card(
+                color: Colors.white,
+                child: ListTile(
+                  title: Text(
+                    judul,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  subtitle: Text('${tanggal.toLocal()}'.split(' ')[0]),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text('Hapus Diary'),
+                            content: const Text('Apakah Anda yakin ingin menghapus diary ini?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('No'),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  deleteData(id);
+                                  Navigator.pop(context);
+                                },
+                                child: const Text('Yes'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailPage(
+                          id: id,
+                          judul: judul,
+                          isi: isi,
+                          tanggal: tanggal,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
     onPressed: () {
