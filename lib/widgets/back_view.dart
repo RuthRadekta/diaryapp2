@@ -36,6 +36,7 @@ class _BackViewState extends State<BackView> {
   late int _selectedDay;
   late int _currentMonth;
   late int _currentYear;
+  Map<String, bool> noteExist = {};
 
   @override
   void initState() {
@@ -44,31 +45,71 @@ class _BackViewState extends State<BackView> {
     _currentMonth = widget.currentMonth;
     _currentYear = widget.currentYear;
     _selectedDay = _currentDate.day;
+    _loadNotes();
+  }
+
+  Future<void> _loadNotes() async {
+    try {
+      QuerySnapshot querySnapshot = await note.get();
+      setState(() {
+        noteExist.clear();
+        for (var doc in querySnapshot.docs) {
+          Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+          
+          if (data.containsKey('tanggal')) {
+            Timestamp timestamp = data['tanggal'] as Timestamp;
+            DateTime noteDate = timestamp.toDate();
+            String dateKey = '${noteDate.day}-${noteDate.month}-${noteDate.year}';
+            debugPrint('Loaded note for date: $dateKey');
+            noteExist[dateKey] = true;
+          } else if (data.containsKey('date')) {
+            String dateStr = data['date'] as String;
+            if (dateStr.isNotEmpty) {
+              List<String> dateParts = dateStr.split('-');
+              if (dateParts.length == 2) {
+                String day = dateParts[0];
+                String month = dateParts[1];
+                String dateKey = '$day-$month-$_currentYear';
+                debugPrint('Loaded note from date string: $dateKey');
+                noteExist[dateKey] = true;
+              }
+            }
+          }
+        }
+      });
+      debugPrint('All notes dates: ${noteExist.keys.toString()}');
+    } catch (e) {
+      debugPrint('Error loading notes: $e');
+    }
   }
 
   @override
   void didUpdateWidget(BackView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentMonth != widget.currentMonth || 
-        oldWidget.currentYear != widget.currentYear) {
+        oldWidget.currentYear != widget.currentYear ||
+        oldWidget.notes != widget.notes) {
       setState(() {
         _currentMonth = widget.currentMonth;
         _currentYear = widget.currentYear;
       });
+      _loadNotes();
     }
   }
 
   void _showDiaryDialog(int day, int month) {
-    String cDay = day < 10 ? '0$day' : '$day';
-    String cMonth = month < 10 ? '0$month' : '$month';
-    String dateStr = '$cDay-$cMonth';
+    String formattedDay = day < 10 ? '0$day' : '$day';
+    String formattedMonth = month < 10 ? '0$month' : '$month';
+    String monthName = months[month]!.keys.first;
+    String dateStr = '$formattedDay-$formattedMonth';
+    String displayDate = '$formattedDay $monthName $_currentYear';
     _judulController.clear();
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Masukkan Judul Diary untuk $dateStr'),
+          title: Text('Masukkan Judul Diary untuk $displayDate'),
           content: TextField(
             controller: _judulController,
             decoration: const InputDecoration(hintText: 'Masukkan judul...'),
@@ -84,6 +125,7 @@ class _BackViewState extends State<BackView> {
               onPressed: () async {
                 if (_judulController.text.isNotEmpty) {
                   await widget.saveNoteToFirestore(dateStr, _judulController.text);
+                  await _loadNotes();
                   Navigator.pop(context);
                   
                   if (mounted) {
@@ -94,7 +136,7 @@ class _BackViewState extends State<BackView> {
                           id: const Uuid().v4(),
                           judul: _judulController.text,
                           isi: '',
-                          tanggal: DateTime.now(),
+                          tanggal: DateTime(_currentYear, month, day),
                         ),
                       ),
                     );
@@ -126,6 +168,37 @@ class _BackViewState extends State<BackView> {
     });
   }
 
+  List<DateTime> _getDaysInMonth() {
+    List<DateTime> days = [];
+    
+    // Dapatkan tanggal pertama bulan ini
+    DateTime firstDayOfMonth = DateTime(_currentYear, _currentMonth, 1);
+    
+    // Sesuaikan weekday agar Minggu = 0 (dalam DateTime.weekday, Minggu = 7)
+    int firstWeekday = firstDayOfMonth.weekday % 7;
+    
+    // Tambahkan tanggal dari bulan sebelumnya
+    DateTime lastMonth = DateTime(_currentYear, _currentMonth - 1);
+    int daysInLastMonth = _daysInMonth(_currentMonth - 1, _currentYear);
+    for (int i = 0; i < firstWeekday; i++) {
+      days.insert(0, DateTime(lastMonth.year, lastMonth.month, daysInLastMonth - i));
+    }
+    
+    // Tambahkan tanggal untuk bulan ini
+    for (int i = 1; i <= _daysInMonth(_currentMonth, _currentYear); i++) {
+      days.add(DateTime(_currentYear, _currentMonth, i));
+    }
+    
+    // Tambahkan tanggal untuk bulan depan jika diperlukan
+    int remainingDays = 42 - days.length; // 42 = 6 baris x 7 hari
+    DateTime nextMonth = DateTime(_currentYear, _currentMonth + 1);
+    for (int i = 1; i <= remainingDays; i++) {
+      days.add(DateTime(nextMonth.year, nextMonth.month, i));
+    }
+    
+    return days;
+  }
+
   @override
   Widget build(BuildContext context) {
     int daysInCurrentMonth = _daysInMonth(_currentMonth, _currentYear);
@@ -152,9 +225,12 @@ class _BackViewState extends State<BackView> {
                   onPressed: () => _changeMonth(-1),
                 ),
                 Text(
-                  '${_currentMonth}-${_currentYear}',
+                  '${months[_currentMonth]!.keys.first}-$_currentYear',
                   textScaleFactor: 2.0,
-                  style: const TextStyle(color: Colors.grey),
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.arrow_forward),
@@ -166,19 +242,19 @@ class _BackViewState extends State<BackView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: const [
-                Text('Min', style: TextStyle(color: Colors.red)),
-                Text('Sen'),
-                Text('Sel'),
-                Text('Rab'),
-                Text('Kam'),
-                Text('Jum'),
-                Text('Sab'),
+                Text('Sun', style: TextStyle(color: Colors.red)),
+                Text('Mon'),
+                Text('Tue'),
+                Text('Wed'),
+                Text('Thu'),
+                Text('Fri'),
+                Text('Sat'),
               ],
             ),
             const SizedBox(height: 10.0),
             Expanded(
               child: GridView.builder(
-                itemCount: daysInCurrentMonth,
+                itemCount: 42,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 7,
                   childAspectRatio: 1 / 1,
@@ -186,41 +262,76 @@ class _BackViewState extends State<BackView> {
                   mainAxisSpacing: 8.0,
                 ),
                 itemBuilder: (_, i) {
-                  int day = i + 1;
-                  DateTime currentDate = DateTime(_currentYear, _currentMonth, day);
-                  bool isToday = _currentDate.day == day &&
-                      _currentMonth == _currentDate.month &&
-                      _currentYear == _currentDate.year;
-                  bool isSelected = _selectedDay == day;
-                  bool hasNote = widget.notes.containsKey('$day-$_currentMonth');
+                  DateTime currentDate = _getDaysInMonth()[i];
+                  int day = currentDate.day;
+                  bool isCurrentMonth = currentDate.month == _currentMonth;
+                  bool isToday = currentDate.year == DateTime.now().year &&
+                      currentDate.month == DateTime.now().month &&
+                      currentDate.day == DateTime.now().day;
+                  bool isSelected = isCurrentMonth && _selectedDay == day;
+                  
+                  String dateKey = '${currentDate.day}-${currentDate.month}-${currentDate.year}';
+                  bool hasNote = noteExist[dateKey] ?? false;
+                  
+                  if (hasNote) {
+                    debugPrint('Found note for date: $dateKey');
+                  }
+                  
                   bool isSunday = currentDate.weekday == DateTime.sunday;
 
                   return GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _selectedDay = day;
-                        _showDiaryDialog(day, _currentMonth);
-                      });
+                      if (isCurrentMonth) {
+                        setState(() {
+                          _selectedDay = day;
+                          _showDiaryDialog(day, _currentMonth);
+                        });
+                      }
                     },
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isSelected
-                            ? Colors.blue
-                            : isToday
-                                ? Colors.orange
+                        color: isToday && isCurrentMonth
+                            ? const Color(0xFF004AAD)
+                            : isSelected && isCurrentMonth
+                                ? Colors.blue.withOpacity(0.3)
                                 : Colors.transparent,
-                        border: hasNote
+                        border: hasNote && isCurrentMonth
                             ? Border.all(color: Colors.green, width: 2)
-                            : Border.all(color: Colors.transparent),
+                            : null,
                       ),
-                      child: Text(
-                        '$day',
-                        style: TextStyle(
-                          color: isSunday ? Colors.red : Colors.black,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text(
+                            '$day',
+                            style: TextStyle(
+                              color: !isCurrentMonth 
+                                  ? Colors.grey.withOpacity(0.5)
+                                  : isToday
+                                      ? Colors.white
+                                      : isSunday 
+                                          ? Colors.red
+                                          : Colors.black,
+                              fontWeight: (isSelected || isToday) && isCurrentMonth 
+                                  ? FontWeight.bold 
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                          if (hasNote && isCurrentMonth)
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.green,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   );

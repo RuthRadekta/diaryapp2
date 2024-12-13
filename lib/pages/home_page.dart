@@ -47,13 +47,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     try {
       var uuid = Uuid();
       String noteId = uuid.v4();
+      DateTime now = DateTime.now();
 
       await _firestore.collection('note').doc(noteId).set({
         'id': noteId,
         'judul': note.isNotEmpty ? note : 'No Title',
         'isi': 'Diary isi default',
-        'tanggal': Timestamp.now(),
-        'date': date.isNotEmpty ? date : '',
+        'tanggal': now,
       });
       
       setState(() {

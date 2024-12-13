@@ -1,5 +1,5 @@
 const months = {
-  1: {'JAN': 31}, // month No : {month:days in month}
+  1: {'JAN': 31},
   2: {'FEB': 28},
   3: {'MAR': 31},
   4: {'APR': 30},
