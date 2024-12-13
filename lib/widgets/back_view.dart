@@ -238,12 +238,6 @@ class _BackViewState extends State<BackView> {
                       icon: const Icon(Icons.arrow_forward),
                       onPressed: () => _changeMonth(1),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: () {
-                        // Tambahkan fungsi search di sini
-                      },
-                    ),
                   ],
                 ),
               ],
