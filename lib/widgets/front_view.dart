@@ -3,9 +3,12 @@ import '../constants.dart';
 
 class FrontView extends StatelessWidget {
   final int monthIndex;
+  final int year;
+
   const FrontView({
     Key? key,
     required this.monthIndex,
+    required this.year,
   }) : super(key: key);
 
   @override
@@ -17,11 +20,11 @@ class FrontView extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
-              Color(0xFFFEE5E1), // Warna gradien pertama
-              Color(0xFF033495), // Warna gradien kedua
+              Color(0xFFFEE5E1),
+              Color(0xFF033495),
             ],
-            begin: Alignment.topLeft, // Titik awal gradien
-            end: Alignment.bottomRight, // Titik akhir gradien
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12.0),
           boxShadow: const [
@@ -31,25 +34,19 @@ class FrontView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // month number
             Text(
-              '$monthIndex',
+              monthIndex.toString(),
               textScaleFactor: 3.5,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
+              style: const TextStyle(color: Colors.white),
             ),
             Text(
-              months[monthIndex]!.keys.toList()[0],
+              '${months[monthIndex]!.keys.toList()[0]} $year',
               textScaleFactor: 2.5,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
+              style: const TextStyle(color: Colors.white),
             ),
             const Spacer(),
             Row(
               children: [
-                // progress bar
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +73,6 @@ class FrontView extends StatelessWidget {
                     ],
                   ),
                 ),
-                // option button
                 const Icon(
                   Icons.more_vert_rounded,
                   color: Colors.white,

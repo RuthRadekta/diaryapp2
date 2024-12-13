@@ -13,12 +13,16 @@ class BackView extends StatefulWidget {
   final Function showEditPopup;
   final Map<String, String> notes;
   final Function saveNoteToFirestore;
+  final int currentMonth;
+  final int currentYear;
 
   const BackView({
     Key? key,
     required this.showEditPopup,
     required this.notes,
     required this.saveNoteToFirestore,
+    required this.currentMonth,
+    required this.currentYear,
   }) : super(key: key);
 
   @override
@@ -28,29 +32,43 @@ class BackView extends StatefulWidget {
 final TextEditingController _judulController = TextEditingController();
 
 class _BackViewState extends State<BackView> {
-  DateTime _currentDate = DateTime.now(); // Tanggal saat ini
-  int _selectedDay = 0;
+  late DateTime _currentDate;
+  late int _selectedDay;
   late int _currentMonth;
   late int _currentYear;
 
   @override
   void initState() {
     super.initState();
-    _currentMonth = _currentDate.month; // Bulan saat ini
-    _currentYear = _currentDate.year; // Tahun saat ini
-    _selectedDay = _currentDate.day; // Hari saat ini
+    _currentDate = DateTime.now();
+    _currentMonth = widget.currentMonth;
+    _currentYear = widget.currentYear;
+    _selectedDay = _currentDate.day;
+  }
+
+  @override
+  void didUpdateWidget(BackView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentMonth != widget.currentMonth || 
+        oldWidget.currentYear != widget.currentYear) {
+      setState(() {
+        _currentMonth = widget.currentMonth;
+        _currentYear = widget.currentYear;
+      });
+    }
   }
 
   void _showDiaryDialog(int day, int month) {
     String cDay = day < 10 ? '0$day' : '$day';
     String cMonth = month < 10 ? '0$month' : '$month';
     String dateStr = '$cDay-$cMonth';
+    _judulController.clear();
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Masukkan Judul Diary'),
+          title: Text('Masukkan Judul Diary untuk $dateStr'),
           content: TextField(
             controller: _judulController,
             decoration: const InputDecoration(hintText: 'Masukkan judul...'),
@@ -65,31 +83,26 @@ class _BackViewState extends State<BackView> {
             TextButton(
               onPressed: () async {
                 if (_judulController.text.isNotEmpty) {
-                  var uuid = Uuid();
-                  String noteId = uuid.v4();
-
                   await widget.saveNoteToFirestore(dateStr, _judulController.text);
-                  setState(() {
-                    _judulController.clear();
-                  });
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailPage(
-                        id: noteId,
-                        judul: _judulController.text,
-                        isi: '',
-                        tanggal: DateTime.now(),
+                  
+                  if (mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DetailPage(
+                          id: const Uuid().v4(),
+                          judul: _judulController.text,
+                          isi: '',
+                          tanggal: DateTime.now(),
+                        ),
                       ),
-                    ),
-                  );
-                } else {
-                  debugPrint('Judul tidak boleh kosong!');
+                    );
+                  }
                 }
               },
               child: const Text('Simpan'),
-            )
+            ),
           ],
         );
       },
@@ -116,6 +129,8 @@ class _BackViewState extends State<BackView> {
   @override
   Widget build(BuildContext context) {
     int daysInCurrentMonth = _daysInMonth(_currentMonth, _currentYear);
+    DateTime firstDayOfMonth = DateTime(_currentYear, _currentMonth, 1);
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Container(
@@ -133,7 +148,7 @@ class _BackViewState extends State<BackView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
-                  icon: Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back),
                   onPressed: () => _changeMonth(-1),
                 ),
                 Text(
@@ -142,12 +157,25 @@ class _BackViewState extends State<BackView> {
                   style: const TextStyle(color: Colors.grey),
                 ),
                 IconButton(
-                  icon: Icon(Icons.arrow_forward),
+                  icon: const Icon(Icons.arrow_forward),
                   onPressed: () => _changeMonth(1),
                 ),
               ],
             ),
             const SizedBox(height: 20.0),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: const [
+                Text('Min', style: TextStyle(color: Colors.red)),
+                Text('Sen'),
+                Text('Sel'),
+                Text('Rab'),
+                Text('Kam'),
+                Text('Jum'),
+                Text('Sab'),
+              ],
+            ),
+            const SizedBox(height: 10.0),
             Expanded(
               child: GridView.builder(
                 itemCount: daysInCurrentMonth,
@@ -159,11 +187,13 @@ class _BackViewState extends State<BackView> {
                 ),
                 itemBuilder: (_, i) {
                   int day = i + 1;
+                  DateTime currentDate = DateTime(_currentYear, _currentMonth, day);
                   bool isToday = _currentDate.day == day &&
                       _currentMonth == _currentDate.month &&
                       _currentYear == _currentDate.year;
                   bool isSelected = _selectedDay == day;
                   bool hasNote = widget.notes.containsKey('$day-$_currentMonth');
+                  bool isSunday = currentDate.weekday == DateTime.sunday;
 
                   return GestureDetector(
                     onTap: () {
@@ -188,7 +218,7 @@ class _BackViewState extends State<BackView> {
                       child: Text(
                         '$day',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: isSunday ? Colors.red : Colors.black,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
