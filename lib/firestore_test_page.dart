@@ -114,6 +114,18 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         backgroundColor: const Color(0xFF004AAD),
         elevation: 0,
         centerTitle: true,
+        leading: Tooltip(
+          message: 'Back',
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
         title: !isSearching
             ? const Text(
                 'Interactive Diary',
@@ -138,19 +150,25 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                 },
               ),
         actions: [
-          IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                if (isSearching) {
-                  isSearching = false;
-                  searchQuery = '';
-                  _searchController.clear();
-                } else {
-                  isSearching = true;
-                }
-              });
-            },
+          Tooltip(
+            message: isSearching ? 'Close' : 'Search Diary',
+            child: IconButton(
+              icon: Icon(
+                isSearching ? Icons.close : Icons.search,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                setState(() {
+                  if (isSearching) {
+                    isSearching = false;
+                    searchQuery = '';
+                    _searchController.clear();
+                  } else {
+                    isSearching = true;
+                  }
+                });
+              },
+            ),
           ),
         ],
       ),
@@ -158,19 +176,27 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
         stream: getNotesStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Colors.white,
+              ),
+            );
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
               child: Text(
                 'Belum ada diary.',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
               ),
             );
           }
 
           final data = snapshot.data!.docs;
           return ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: data.length,
             itemBuilder: (context, index) {
               final doc = data[index];
@@ -179,21 +205,47 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
               final isi = docData['isi'] ?? 'No Content';
               final judul = docData['judul'] ?? 'No Title';
               final tanggal = (docData['tanggal'] as Timestamp?)?.toDate() ?? DateTime.now();
-              return Card(
-                color: Colors.white,
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   title: Text(
                     judul,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: Color(0xFF004AAD),
+                      fontSize: 16,
                     ),
                   ),
-                  subtitle: Text('${tanggal.toLocal()}'.split(' ')[0]),
+                  subtitle: Text(
+                    DateFormat('EEE, d MMM yyyy').format(tanggal),
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: const Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
                     onPressed: () {
                       showDialog(
                         context: context,
@@ -203,17 +255,21 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                             content: const Text('Apakah Anda yakin ingin menghapus diary ini?'),
                             actions: [
                               TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('No'),
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'Batal',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                               ),
                               TextButton(
                                 onPressed: () {
                                   deleteData(id);
                                   Navigator.pop(context);
                                 },
-                                child: const Text('Yes'),
+                                child: const Text(
+                                  'Hapus',
+                                  style: TextStyle(color: Colors.red),
+                                ),
                               ),
                             ],
                           );
@@ -240,26 +296,30 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-    onPressed: () {
-      // Tambahkan tindakan untuk FAB (misalnya navigasi ke halaman tambah catatan)
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => DetailPage(
-            id: '',
-            judul: '',
-            isi: '',
-            tanggal: DateTime.now(),
+      floatingActionButton: Tooltip(
+        message: 'Add New Diary',
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailPage(
+                  id: '',
+                  judul: '',
+                  isi: '',
+                  tanggal: DateTime.now(),
+                ),
+              ),
+            );
+          },
+          backgroundColor: const Color(0xFFFFD4E2),
+          child: const Icon(
+            Icons.add,
+            color: Color(0xFF004AAD),
           ),
+          elevation: 4,
         ),
-      );
-    },
-    backgroundColor: const Color(0xFFFFD4E2),
-    shape: const CircleBorder(),
-    elevation: 18.0, // Menambahkan bayangan
-    child: const Icon(Icons.add),
-  ),
+      ),
     );
   }
 }
@@ -329,7 +389,6 @@ Future<void> _createDiary(String judulBaru, String isiBaru) async {
 
   @override
   Widget build(BuildContext context) {
-    // Format tanggal untuk menampilkan dalam format yang diinginkan
     final formattedDate = DateFormat('EEE, d MMM yyyy').format(widget.tanggal);
 
     return Scaffold(
@@ -338,25 +397,32 @@ Future<void> _createDiary(String judulBaru, String isiBaru) async {
         backgroundColor: const Color(0xFF004AAD),
         elevation: 0,
         centerTitle: true,
+        leading: Tooltip(
+          message: 'Back and Save',
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+            onPressed: () async {
+              if (widget.id.isEmpty) {
+                await _createDiary(_judulController.text, _isiController.text);
+              } else {
+                await _updateDiary(widget.id, _judulController.text, _isiController.text);
+              }
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+          ),
+        ),
         title: const Text(
           'Edit Diary',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () async {
-            if (widget.id.isEmpty) {
-              // Jika ID kosong, berarti ini adalah diary baru
-              print('Memanggil _createDiary');
-              await _createDiary(_judulController.text, _isiController.text);
-            } else {
-              // Jika ID tidak kosong, berarti ini adalah diary yang diperbarui
-              print('Memanggil _updateDiary');
-              await _updateDiary(widget.id, _judulController.text, _isiController.text);
-            }
-            debugPrint("Kembali ke halaman sebelumnya");
-            Navigator.pop(context); // Kembali ke layar sebelumnya
-          },
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
       ),
       body: Padding(
@@ -368,16 +434,19 @@ Future<void> _createDiary(String judulBaru, String isiBaru) async {
             TextField(
               controller: _judulController,
               maxLines: 1,
-              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
               decoration: const InputDecoration(
                 labelStyle: TextStyle(color: Colors.white70),
                 hintText: 'Judul diary...',
                 border: InputBorder.none,
-                focusedBorder: InputBorder.none
+                focusedBorder: InputBorder.none,
               ),
             ),
             const SizedBox(height: 5),
-            // Menampilkan tanggal dalam format italic
             Text(
               formattedDate,
               style: const TextStyle(
@@ -390,8 +459,11 @@ Future<void> _createDiary(String judulBaru, String isiBaru) async {
             Expanded(
               child: TextField(
                 controller: _isiController,
-                maxLines: null, // Input teks fleksibel
-                style: const TextStyle(color: Colors.white, fontSize: 16),
+                maxLines: null,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'Tulis sesuatu di sini...',
                   hintStyle: TextStyle(color: Colors.white70),
