@@ -260,42 +260,29 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                 },
               ),
             ),
-            const Divider(color: Colors.white),
-            TextField(
-              controller: _judulController,
-              maxLines: null,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Write something here...',
-                hintStyle: TextStyle(color: Colors.white70),
-                border: InputBorder.none,
-              ),
-            ),
-            const SizedBox(height: 10),
-            FloatingActionButton.extended(
-              onPressed: () {
-                if (_judulController.text.isNotEmpty) {
-                  addData(_judulController.text, _isiDiaryController.text);
-                  _judulController.clear();
-                  _isiDiaryController.clear();
-                } else {
-                  debugPrint('Judul atau isi tidak boleh kosong!');
-                }
-              },
-              backgroundColor: const Color(0xFFFFD4E2),
-              label: Row(
-                children: const [
-                  Text(
-                    "Add Diary",
-                    style: TextStyle(color: Colors.black),
-                  ),
-                  Icon(Icons.add, color: Colors.black),
-                ],
-              ),
-            ),
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+    onPressed: () {
+      // Tambahkan tindakan untuk FAB (misalnya navigasi ke halaman tambah catatan)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetailPage(
+            id: '',
+            judul: '',
+            isi: '',
+            tanggal: DateTime.now(),
+          ),
+        ),
+      );
+    },
+    backgroundColor: const Color(0xFFFFD4E2),
+    shape: const CircleBorder(),
+    elevation: 18.0, // Menambahkan bayangan
+    child: const Icon(Icons.add),
+  ),
     );
   }
 }
@@ -350,6 +337,19 @@ class _DetailPageState extends State<DetailPage> {
   }
 }
 
+Future<void> _createDiary(String judulBaru, String isiBaru) async {
+  try {
+    final newDoc = await note.add({
+      'judul': judulBaru.isEmpty ? 'Diary Baru' : judulBaru,
+      'isi': isiBaru,
+      'tanggal': DateTime.now(),
+    });
+    debugPrint('Diary berhasil dibuat dengan ID: ${newDoc.id}');
+  } catch (e) {
+    debugPrint('Gagal membuat diary: $e');
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     // Format tanggal untuk menampilkan dalam format yang diinginkan
@@ -368,8 +368,14 @@ class _DetailPageState extends State<DetailPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () async {
-            await _updateDiary(widget.id, _judulController.text, _isiController.text);
-            Navigator.pop(context);
+            if (widget.id.isEmpty) {
+              // Jika ID kosong, berarti ini adalah diary baru
+              await _createDiary(_judulController.text, _isiController.text);
+            } else {
+              // Jika ID tidak kosong, berarti ini adalah diary yang diperbarui
+              await _updateDiary(widget.id, _judulController.text, _isiController.text);
+            }
+            Navigator.pop(context); // Kembali ke layar sebelumnya
           },
         ),
       ),
