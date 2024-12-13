@@ -193,29 +193,24 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final doc = data[index];
-                      final id = doc['id'] ?? '';
-                      final isi = doc['isi'] ?? 'No Content';
-                      
-                      // Memastikan data tidak null dan kemudian melakukan pengecekan 'judul'
-                      final docData = doc.data() as Map<String, dynamic>? ?? {};
-                      final judul = docData != null && docData.containsKey('judul') ? docData['judul'] : 'No Title'; // Pengecekan field 'judul'
-
-                      final tanggal = (doc['tanggal'] as Timestamp).toDate() ?? DateTime.now();
+                      final id = doc.id;
+                      final docData = doc.data() as Map<String, dynamic>;
+                      final isi = docData['isi'] ?? 'No Content';
+                      final judul = docData['judul'] ?? 'No Title';
+                      final tanggal = (docData['tanggal'] as Timestamp?)?.toDate() ?? DateTime.now();
                       return Card(
                         color: Colors.white,
                         child: ListTile(
                           title: Text(
-                            judul, // Menampilkan hanya judul
-                            overflow: TextOverflow.ellipsis, // Memotong teks jika terlalu panjang
-                            maxLines: 1, // Menampilkan hanya 1 baris
+                            judul,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.black,
                             ),
                           ),
-                          subtitle: Text(
-                              '${tanggal.toLocal()}'.split(' ')[0]
-                          ), // Format tanggal
+                          subtitle: Text('${tanggal.toLocal()}'.split(' ')[0]),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () {
@@ -228,14 +223,14 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                                     actions: [
                                       TextButton(
                                         onPressed: () {
-                                          Navigator.pop(context); // Menutup dialog jika "No"
+                                          Navigator.pop(context);
                                         },
                                         child: const Text('No'),
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          deleteData(id); // Hapus data jika "Yes"
-                                          Navigator.pop(context); // Menutup dialog
+                                          deleteData(id);
+                                          Navigator.pop(context);
                                         },
                                         child: const Text('Yes'),
                                       ),
@@ -246,13 +241,12 @@ class _FirestoreTestPageState extends State<FirestoreTestPage> {
                             },
                           ),
                           onTap: () {
-                            // Navigasi ke halaman detail ketika Card diklik
                             Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => DetailPage(
                                   id: id,
-                                  judul: judul, // Kirim judul ke halaman detail
+                                  judul: judul,
                                   isi: isi,
                                   tanggal: tanggal,
                                 ),
